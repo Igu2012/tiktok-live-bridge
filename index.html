@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Live Bridge Client</title>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background: #f4f4f9; }
+        input, button { padding: 10px; font-size: 16px; margin: 5px 0; }
+        #logs { background: #1e1e1e; color: #fff; padding: 15px; border-radius: 5px; height: 400px; overflow-y: auto; font-family: monospace; }
+        .chat { color: #a6e22e; }
+        .gift { color: #f92672; font-weight: bold; }
+        .system { color: #66d9ef; }
+    </style>
+</head>
+<body>
+    <h2>TikTok Live Monitor</h2>
+    <input type="text" id="username" placeholder="Username (e.g. @khaby.lame)">
+    <button onclick="startConnection()">Connect</button>
+    <div id="logs"></div>
+
+    <script>
+        const RENDER_URL = "https://tiktok-live-bridge.onrender.com"; // Update this with your actual Render URL
+        const socket = io(RENDER_URL);
+        const logsDiv = document.getElementById('logs');
+
+        function log(message, className = 'system') {
+            const p = document.createElement('p');
+            p.className = className;
+            p.innerText = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsDiv.appendChild(p);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        function startConnection() {
+            const username = document.getElementById('username').value.trim();
+            if (!username) return alert('Please enter a username');
+            log(`Attempting to bridge to ${username}...`);
+            socket.emit('connect_tiktok', username);
+        }
+
+        socket.on('tiktok_connected', (data) => {
+            log(`Successfully joined live room. Room ID: ${data.roomId}`);
+        });
+
+        socket.on('live_chat', (data) => {
+            log(`${data.uniqueId}: ${data.comment}`, 'chat');
+        });
+
+        socket.on('live_gift', (data) => {
+            log(`${data.uniqueId} sent ${data.giftName} x${data.repeatCount}`, 'gift');
+        });
+
+        socket.on('tiktok_disconnected', (reason) => {
+            log(`Disconnected: ${reason}`);
+        });
+    </script>
+</body>
+</html>
